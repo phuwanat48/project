@@ -7,7 +7,7 @@
 # ---------- Stage 1: test ----------
 FROM node:22-alpine AS test
 WORKDIR /app
-COPY tests/ ./tests/
+COPY tests ./tests/
 COPY app.js index.html ./
 # เทสรันด้วย Node ล้วน ไม่ต้อง npm install (ไม่มี dependency)
 RUN node tests/app.test.js
