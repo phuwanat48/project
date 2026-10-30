@@ -4,7 +4,6 @@
 .opencode
 .opencode/**
 docs
-tests
 Dockerfile
 .dockerignore
 .github
