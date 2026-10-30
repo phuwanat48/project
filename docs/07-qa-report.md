@@ -1,0 +1,150 @@
+# QA Report — เว็บ Todo List
+
+> เจ้าของไฟล์: qa | วันที่ตรวจ: 2026-10-30
+> อ้างอิง: `docs/01-backlog.md` (US-001–US-007), `docs/04-spec.md` (รวม T-008 custom modal และ edge cases ข้อ 9)
+> โค้ดที่ตรวจ: `index.html`, `styles.css`, `app.js`
+
+---
+
+## 1. วิธีการทดสอบ
+
+- **เทสอัตโนมัติ (รันด้วย Node ล้วน):** `node tests/app.test.js` — โหลด `app.js` จริงเข้า sandbox ผ่าน `vm.runInContext` พร้อม stub DOM + stub localStorage (`tests/helpers/stub-env.js`) จึงทดสอบ logic จริงทุกฟังก์ชัน (load/save/actions/edit flow/modal) ได้โดยไม่ต้องเปิดเบราว์เซอร์ และไม่ต้องแก้โค้ดหลัก
+- **ข้อจำกัดของเทสอัตโนมัติ:** ไม่ได้รันในเบราว์เซอร์จริง จึง**ไม่ครอบคลุม** สิ่งที่ต้องตรวจด้วยเบราว์เซอร์/ตาด้วยตา (แนะนำให้ dev/writer ตรวจซ้ำก่อนส่งมอบ):
+  - CSS/visual ทั้งหมด: `.done` ขีดฆ่า+สีจาง, `.shake` animation 250ms, `prefers-reduced-motion`, focus ring, responsive < 768px (ปุ่ม icon-only ✎/🗑, ปุ่มเพิ่มเต็มความกว้าง), touch target ≥ 44px, คอนทราสต์ ≥ 4.5:1
+  - พฤติกรรม focus จริงของเบราว์เซอร์ (blur/focusout จริง, Tab order จริง, select() ของ input)
+  - การเปิดผ่าน `file://` และ static hosting
+- สิ่งที่ stub ตรวจแทนได้: โครงสร้าง DOM, class สถานะ, attribute (`disabled`, `aria-label`, `hidden`), ลำดับ event handler, state + localStorage ครบทุกขั้นตอน
+
+## 2. ตาราง Test Cases
+
+ผลจริงทุกข้อ = ตรงตามผลที่คาดหวัง (PASS) เว้นแต่ระบุเป็นอย่างอื่น
+
+### US-001 เพิ่มรายการ
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-001.1 | US-001 AC1, AC2 | `addTodo()` 2 ครั้ง | รายการปรากฏท้าย list, done=false, input เคลียร์, focus ค้างที่ input, id ไม่ซ้ำ | PASS |
+| TC-001.2 | US-001 AC1 | ส่งผ่าน `onAddSubmit` (form submit — กลไกเดียวกันของปุ่มเพิ่มและ Enter) | preventDefault ถูกเรียก + เพิ่มรายการได้ | PASS |
+| TC-001.3 | US-001 AC3 | input ว่าง → submit | ไม่เพิ่มรายการ + feedback `กรุณาพิมพ์สิ่งที่ต้องทำ` (.error) + input มี class .shake + focus กลับ input | PASS |
+| TC-001.4 | US-001 AC3, spec 9.11 | input = `"   "` → submit | ถือเป็นค่าว่าง ไม่เพิ่มรายการ + feedback เดียวกัน | PASS |
+| TC-001.5 | US-001 AC4 | เพิ่มรายการแล้วอ่าน localStorage ทันที | key `todoapp.todos.v1` มีรายการใหม่ (text, done:false, createdAt) ทันที | PASS |
+
+### US-002 ลบรายการ
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-002.1 | US-002 AC1 | ตรวจทุกแถว | มีปุ่มลบเป็น `<button>` จริง label `ลบ` + aria-label `ลบรายการนี้` | PASS |
+| TC-002.2 | US-002 AC2 | กดปุ่มลบแถวกลาง (event delegation) | รายการหายจาก state + list ทันที | PASS |
+| TC-002.3 | US-002 AC3 | ลบแล้วอ่าน localStorage + จำลอง refresh (`reloadPage`) | รายการที่ลบไม่อยู่ใน storage และไม่กลับมาหลัง refresh | PASS |
+| TC-002.4 | US-002 AC4 | ลบ 1 รายการจาก 3 | รายการอื่นครบถ้วนตามลำดับเดิม | PASS |
+
+### US-003 ติ๊กเครื่องหมายว่าเสร็จแล้ว
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-003.1 | US-003 AC1 | ตรวจทุกแถว | มี `<input type="checkbox">` จริง + aria-label `ทำเครื่องหมายว่าเสร็จแล้ว: {ข้อความ}` | PASS |
+| TC-003.2 | US-003 AC2, AC4 | ติ๊ก checkbox (event `change`) | state done=true, แถวมี class `.done`, checkbox checked, localStorage อัปเดตทันที | PASS |
+| TC-003.3 | US-003 AC3, AC4 | ติ๊กซ้ำ (uncheck) | กลับ done=false, class .done หาย, localStorage อัปเดต | PASS |
+| TC-003.4 | US-003 (ไม่กระทบอื่น) | ติ๊ก A ขณะมี A,B | B ยัง done=false และไม่มี class .done | PASS |
+
+### US-004 ข้อมูลคงอยู่ / ข้อมูลเสียหาย
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-004.1 | US-004 AC1 | เพิ่ม+ติ๊กแล้วจำลอง refresh | โหลดข้อความ+สถานะเดิมถูกต้อง, แถวเสร็จมี class .done | PASS |
+| TC-004.2 | US-004 AC2 | เพิ่ม 3 รายการแล้ว refresh | ลำดับคงเดิมทั้ง state และ DOM | PASS |
+| TC-004.3 | US-004 AC3 | storage ว่าง → init | empty state `ยังไม่มีรายการ — เริ่มพิมพ์ด้านบนได้เลย`, ไม่มี error | PASS |
+| TC-004.4 | US-004 AC4, spec 9.2 | ใส่ JSON ตัดครึ่ง `{{{` → init | ไม่ crash, คืน [], แสดง empty state, เพิ่มรายการใหม่ต่อได้ปกติ | PASS |
+| TC-004.5 | US-004 AC4 | ใส่ `"hello"` และ object ไม่ใช่ array → init | คืน [] ไม่ crash | PASS |
+| TC-004.6 | US-004 AC4, spec 4.3 | ใส่ item ผสม (เพี้ยน/ถูกต้อง/ไม่มี createdAt) | item เสียถูกกรองทิ้ง, item ถูกต้องคงอยู่, text trim, createdAt หาย → `""` | PASS |
+
+### US-005 แก้ไขข้อความ
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-005.1 | US-005 AC1, spec 6.2 | กดปุ่มแก้ไข | แถวมี class .editing, input มีข้อความเดิม + focus + select อัตโนมัติ, ซ่อนปุ่มแก้ไข/ลบ, แสดงบันทึก/ยกเลิก | PASS |
+| TC-005.2 | US-005 AC2 | แก้ข้อความ + Enter | ข้อความใหม่แสดงใน list + ลง localStorage + ออกโหมดแก้ไข | PASS |
+| TC-005.3 | US-005 AC3, spec 9.11 | แก้เป็น `"   "` + Enter | ไม่บันทึก + shake + feedback + **ยังอยู่โหมดแก้ไข** | PASS |
+| TC-005.4 | US-005 AC4 | พิมพ์ค้างแล้วกด Esc | ยกเลิก ข้อความเดิมคงอยู่ localStorage ไม่เปลี่ยน | PASS |
+| TC-005.5 | spec C-4, 9.4 | แก้ A (มีข้อความ) แล้วคลิกแก้ B | A บันทึกอัตโนมัติ (state+storage) แล้ว B เข้าโหมดแก้ไข | PASS |
+| TC-005.6 | spec 9.4 | แก้ A (input ว่าง) แล้วคลิกแก้ B | A ยกเลิก (คงข้อความเดิม) แล้ว B เข้าโหมดแก้ไข | PASS |
+| TC-005.7 | US-005 AC1 | double-click ข้อความ | เข้าโหมดแก้ไขได้ | PASS |
+| TC-005.8 | spec 9.14 | double-click ข้อความที่เสร็จแล้ว | เข้าโหมดแก้ไขได้ สถานะ done ไม่เปลี่ยน | PASS |
+| TC-005.9 | US-005 AC4 | กดปุ่มยกเลิก | ข้อความเดิมคงอยู่ ไม่บันทึก + focus กลับปุ่มแก้ไข | PASS |
+| TC-005.10 | US-005 AC2, AC3 | กดปุ่มบันทึก (มี/ไม่มีข้อความ) | บันทึกได้ / ถ้าว่าง → feedback + อยู่โหมดแก้ไขต่อ | PASS |
+| TC-005.11 | spec 9.6 | แก้เป็นข้อความเดิมเป๊ะ + Enter | บันทึกได้ปกติ ออกจากโหมดแก้ไข | PASS |
+
+### US-006 ลบรายการที่เสร็จแล้วทั้งหมด + custom modal (T-008)
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-006.1 | US-006 AC1, AC4 | ตรวจปุ่ม clear ทุกสถานการณ์ | disabled (attribute จริง) เมื่อจำนวนเสร็จ = 0, enabled เมื่อ ≥ 1 | PASS |
+| TC-006.2 | US-006 AC1, spec C-1 | มีรายการเสร็จ 2 → กด clear | **custom modal** แสดงก่อนเสมอ ข้อความ `ต้องการลบรายการที่เสร็จแล้ว 2 รายการหรือไม่?` state/storage ยังไม่เปลี่ยน | PASS |
+| TC-006.3 | spec T-008 | เปิด modal | focus อยู่ที่ปุ่ม "ยกเลิก" ก่อน | PASS |
+| TC-006.4 | US-006 AC2, AC3 | กดยืนยัน | รายการเสร็จหายหมด รายการค้างคงอยู่ครบ, localStorage อัปเดตทันที, modal ปิด, ปุ่ม clear กลับเป็น disabled | PASS |
+| TC-006.5 | US-006 (ยกเลิก) | กดปุ่มยกเลิกใน modal (ผ่าน listener จริงที่ wireEvents ผูก) | modal ปิด ไม่มีอะไรเปลี่ยนแปลง (list + localStorage เดิม) | PASS |
+| TC-006.6 | spec T-008 | กด Esc ใน modal | modal ปิด ถือเป็นยกเลิก ไม่มีอะไรเปลี่ยนแปลง | PASS |
+| TC-006.7 | spec T-008 | คลิก backdrop / คลิกเนื้อหาใน dialog | backdrop → ปิด+ยกเลิก / เนื้อหาใน dialog → ไม่ปิด | PASS |
+| TC-006.8 | spec T-008 | Tab / Shift+Tab ใน modal | focus trap วนเฉพาะปุ่มยืนยัน↔ยกเลิก | PASS |
+| TC-006.9 | spec T-008 | ปิด modal ด้วย Esc และด้วยปุ่มยืนยัน | focus ถูกคืนกลับที่ปุ่ม clear completed ทุกวิธี | PASS |
+| TC-006.10 | spec C-1 | grep `window.confirm` ใน app.js | ไม่พบ (ใช้ custom modal เท่านั้น) | PASS |
+
+### US-007 นับจำนวนรายการค้าง/เสร็จ
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-007.1 | US-007 AC1 | เพิ่ม/ติ๊ก/ลบ/clear completed แล้วอ่าน counter ทันที | `ค้าง: N` / `เสร็จแล้ว: M` อัปเดตถูกต้องทันทีทุกกรณี | PASS |
+| TC-007.2 | US-007 AC2 | refresh หลังมี 2 ค้าง 1 เสร็จ | ตัวเลขตรงกับ list (`ค้าง: 2` / `เสร็จแล้ว: 1`) | PASS |
+| TC-007.3 | US-007 AC3 | ไม่มีรายการเลย | แสดง `ค้าง: 0` / `เสร็จแล้ว: 0` | PASS |
+
+### Edge cases (spec ข้อ 9) + ความปลอดภัย
+
+| ID | เชื่อมกับ | ขั้นตอน | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|---|---|
+| TC-E.1 | spec 9.9 | เพิ่ม `<img src=x onerror=alert(1)>` | แสดงเป็นข้อความธรรมดา (textContent) ไม่มี element ลูกถูกสร้าง | PASS |
+| TC-E.2 | spec 9.3, 4.4 | จำลอง setItem throw (quota เต็ม) | ไม่ crash + feedback `บันทึกไม่สำเร็จ — ข้อมูลจะหายเมื่อปิดหน้านี้` + state ใน memory ยังถูกต้อง | PASS |
+| TC-E.3 | spec 9.3, 4.3 | จำลอง getItem throw (storage ถูกปิด) | `load()` คืน [] ไม่ crash | PASS |
+| TC-E.4 | spec ข้อ 8, T-012 | grep โค้ดจริง (ตัดคอมเมนต์แล้ว) | ไม่มี `innerHTML` / `insertAdjacentHTML` / `document.write` / `window.confirm` | PASS |
+| TC-E.5 | spec 9.8 | ลบรายการที่กำลังแก้ไขอยู่ (เรียก deleteTodo ตรง) | `editingId` ถูกเคลียร์ | PASS |
+| TC-E.6 | spec 9.12 | refresh ระหว่างโหมดแก้ไข | `editingId` ไม่ persist หลังโหลดไม่มีแถวอยู่โหมดแก้ไข | PASS |
+| TC-E.7 | spec 7.1 | ตรวจ event wiring หลัง init | ul ผูก change/click/dblclick/keydown/focusout/mousedown ครบ (delegation), form ผูก submit, document ผูก keydown, ไม่มี listener ต่อรายการ | PASS |
+| TC-E.8 | spec 9.7 | ติ๊ก checkbox ขณะแก้อีกแถว (blur → change) | blur บันทึกแถวที่แก้ก่อน แล้ว toggle สำเร็จ — ทั้งสอง action สำเร็จ | PASS |
+| TC-E.9 | spec 9.5 | Esc แล้ว blur ตามมา | ยกเลิกเท่านั้น ห้ามบันทึกข้อความที่พิมพ์ค้าง | PASS |
+| TC-E.10 | spec 7.1 | blur ไปปุ่มในแถวเดียวกัน (Tab ไปปุ่มบันทึก) | โหมดแก้ไขคงอยู่ ยังไม่บันทึก (ให้ปุ่มจัดการเอง) | PASS |
+
+## 3. บั๊กที่พบ
+
+**ไม่พบบั๊กที่ต้องให้ dev แก้** — ทุก acceptance criteria ของ US-001–US-007 และ edge cases ตาม spec ข้อ 9 ผ่านครบตามพฤติกรรมที่กำหนด
+
+### 3.1 ข้อสังเกต (ไม่ใช่บั๊ก — ไม่บล็อกการส่งมอบ)
+
+| # | ระดับ | รายละเอียด | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| O-1 | Minor (a11y) | กดยืนยันใน modal → `closeConfirmModal()` คืน focus ที่ปุ่ม clear completed ก่อน แต่ `commit()` → `render()` ทำให้ปุ่มกลายเป็น disabled (จำนวนเสร็จ = 0) focus จึงหลุดไป body หลัง render — ตาม spec ข้อ T-008 ถือว่า "คืน focus กลับปุ่ม clear" ทำแล้ว แตะเรื่อง polish เท่านั้น (เช่น ย้าย focus ไป input หลักแทน) | `app.js` (confirmModalAction / renderClearButton) |
+| O-2 | Minor (a11y) | กด Esc ในโหมดแก้ไข → ยกเลิกถูกต้อง แต่ไม่มีการคืน focus ที่ปุ่มแก้ไขของแถวนั้นเหมือนปุ่มยกเลิก (ผู้ใช้คีย์บอร์ดต้อง Tab ใหม่) — spec ข้อ 7.1 กำหนดแค่ "ยกเลิก: editingId = null → render()" จึงยังตรง spec | `app.js` (onListKeydown, บรรทัด ~500–506) |
+
+### 3.2 บันทึกการแก้ไขเทสระหว่างรัน (ความโปร่งใส — ไม่ได้แก้เทสเพื่อซ่อนบั๊ก)
+
+รอบแรกมีเทสไม่ผ่าน 13 ข้อ ตรวจสอบแล้ว**ทั้งหมดเป็นข้อผิดพลาดของตัวเทสเอง ไม่ใช่บั๊กของแอป** จึงแก้ที่ไฟล์เทสเท่านั้น:
+
+1. **`assert.deepStrictEqual` ข้าม vm realm** (12 ข้อ: TC-001.1, TC-002.2, TC-002.4, TC-004.1–004.6, TC-006.4, TC-E.3) — array ที่สร้างภายใน vm context มี Array prototype ต่าง realm จาก host Node ทำให้ deepStrictEqual ฟ้อง "not reference-equal" แม้ค่าเท่ากันทุกประการ → เปลี่ยนไปเทียบผ่าน `JSON.stringify` (ค่าเดิม ตรวจเดิม ไม่ลดความเข้ม)
+2. **TC-006.5** — ลืมเรียก `init()` (ซึ่งรัน `wireEvents`) ก่อนเช็คว่าปุ่มยกเลิกถูกผูก event — เป็นการตั้งเงื่อนไขเทสไม่ครบ ไม่เกี่ยวกับโค้ดแอป
+3. **TC-E.4** — regex เดิมติดคำว่า "innerHTML" ที่อยู่ใน**คอมเมนต์**ของ `app.js` (หัวไฟล์บอกว่า "ห้ามใช้ innerHTML") → แก้เป็นตัดคอมเมนต์ออกก่อนแล้วเช็คการ**ใช้งานจริง**ในโค้ด ซึ่งตรงกับเจตนาของ spec ข้อ 8/T-012
+
+## 4. สถิติ
+
+| รายการ | จำนวน |
+|---|---|
+| เทสทั้งหมด | 53 |
+| ผ่าน | 53 |
+| ไม่ผ่าน | 0 |
+| บั๊กที่ต้องแก้ | 0 |
+| ข้อสังเกตไม่บล็อก (minor a11y) | 2 (O-1, O-2) |
+
+การกระจายเทส: US-001 × 5, US-002 × 4, US-003 × 4, US-004 × 6, US-005 × 11, US-006 × 10, US-007 × 3, Edge/Security × 10
+
+## 5. สรุป
+
+Logic ทั้งหมดของแอป (state, persistence, validation, actions, edit flow, custom modal พร้อม focus trap/Esc/backdrop, counter, event delegation) ทำงานถูกต้องตาม acceptance criteria ของ US-001–US-007 และ edge cases ใน `docs/04-spec.md` ข้อ 9 ครบทุกข้อ คงเหลือเฉพาะการตรวจ visual/CSS และพฤติกรรม focus จริงในเบราว์เซอร์ (ดูข้อ 1) ซึ่งอยู่นอกขอบเขตของเทสอัตโนมัติที่รันได้ในสภาพแวดล้อมนี้
+
+RESULT: PASS

@@ -1,0 +1,46 @@
+# ============================================================
+# CI — Todo List (static client-side)
+# ขั้นตอน: checkout → ตั้ง Node → รันเทส → build Docker image (ตรวจว่า build ได้)
+# ไม่มี lint/build step จริง เพราะโปรเจกต์ไม่มี dependency และไม่มี build step
+# ============================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: รันเทส (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout โค้ด
+        uses: actions/checkout@v4
+
+      - name: ตั้งค่า Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ไม่ต้อง npm install — เทสรันด้วย Node ล้วน ไม่มี dependency
+      - name: รันเทส
+        run: node tests/app.test.js
+
+  docker-build:
+    name: ตรวจว่า build Docker image ได้
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout โค้ด
+        uses: actions/checkout@v4
+
+      - name: Build image (ไม่ push)
+        run: docker build -t todo-list:ci .
+
+      - name: ตรวจ container เปิดให้บริการได้
+        run: |
+          docker run -d --name todo-test -p 8080:8080 todo-list:ci
+          sleep 3
+          curl -fsS http://127.0.0.1:8080/ | grep -q "Todo List"
+          docker rm -f todo-test

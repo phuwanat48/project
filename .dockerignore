@@ -1,0 +1,16 @@
+# ไม่ต้องส่งสิ่งเหล่านี้เข้า build context (ลดขนาด image + ไม่หลุดข้อมูลไม่จำเป็น)
+.git
+.gitignore
+.opencode
+.opencode/**
+docs
+tests
+Dockerfile
+.dockerignore
+.github
+README.md
+AGENTS.md
+opencode.json
+*.md
+.env
+.env.*

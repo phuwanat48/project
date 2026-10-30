@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- defer เพื่อให้เปิดผ่าน file:// ได้ และ DOM พร้อมก่อน script ทำงาน -->
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <h1>Todo List</h1>
+
+    <!-- form เดียวครอบ input + ปุ่ม ทำให้ Enter และปุ่ม submit ทำงานในกลไกเดียว -->
+    <form id="add-form" autocomplete="off">
+      <label for="todo-input" class="visually-hidden">สิ่งที่ต้องทำ</label>
+      <input id="todo-input" type="text" placeholder="พิมพ์สิ่งที่ต้องทำ…">
+      <button type="submit" id="add-btn">เพิ่ม</button>
+    </form>
+
+    <!-- พื้นที่ข้อความแจ้ง (ว่างไว้ default — JS จะเติมข้อความเอง) -->
+    <p id="feedback" role="status" aria-live="polite"></p>
+
+    <!-- ตัว list — JS สร้าง <li> เท่านั้น ห้าม hardcode รายการในไฟล์นี้ -->
+    <ul id="todo-list"></ul>
+
+    <!-- แถบสถานะ: counter (ครอบด้วย element ที่มี aria-live) + ปุ่ม clear -->
+    <div id="status-bar">
+      <p class="counts" aria-live="polite">
+        <span id="count-pending">ค้าง: 0</span>
+        <span id="count-done">เสร็จแล้ว: 0</span>
+      </p>
+      <button type="button" id="clear-completed-btn" disabled>ลบรายการที่เสร็จแล้ว</button>
+    </div>
+  </main>
+
+  <!-- Custom confirmation modal ของ clear completed (US-006) — ซ่อนไว้ JS เปิดเอง -->
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-text">
+      <p id="modal-text"></p>
+      <div class="modal-actions">
+        <button type="button" id="modal-cancel">ยกเลิก</button>
+        <button type="button" id="modal-confirm" class="btn-danger">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
