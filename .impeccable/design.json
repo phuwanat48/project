@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T00:00:00+07:00",
+  "title": "Design System: Todo List",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "น้ำเงินพึ่งพาได้ (Dependable Blue)", "canonical": "#155ab6", "tonalRamp": ["#0b1c33", "#12355e", "#155ab6", "#2a6cc0", "#4b86cd", "#7ea9dd", "#b3cded", "#e3edf9"] },
+      "primary-deep": { "role": "primary", "displayName": "น้ำเงินพึ่งพาได้ (เข้ม)", "canonical": "#114a99", "tonalRamp": ["#0a1830", "#0f2a54", "#114a99", "#2a5fae", "#4d7cbe", "#84a3d4", "#b9cbe6", "#e2eaf5"] },
+      "danger": { "role": "secondary", "displayName": "แดงประตูไม่กลับ (Point of No Return Red)", "canonical": "#b3261e", "tonalRamp": ["#3a0b08", "#641410", "#b3261e", "#bf3f37", "#cd5c53", "#dc837b", "#efb2ab", "#fbeeed"] },
+      "danger-deep": { "role": "secondary", "displayName": "แดงประตูไม่กลับ (เข้ม)", "canonical": "#8f1e18", "tonalRamp": ["#2c0502", "#521009", "#8f1e18", "#a3332b", "#b35149", "#c67c73", "#e0aca4", "#f6e5e2"] },
+      "page": { "role": "neutral", "displayName": "เทาอุ่น (Warm Grey)", "canonical": "#f5f7fa", "tonalRamp": ["#94a1ac", "#b0bcc5", "#cdd6dd", "#e2e8ec", "#eff2f6", "#f5f7fa", "#fafbfc", "#ffffff"] },
+      "surface": { "role": "neutral", "displayName": "กระดาษ (Paper)", "canonical": "#ffffff", "tonalRamp": ["#c8ccd0", "#d8dce0", "#e6e9ec", "#eef0f2", "#f5f6f8", "#fafbfc", "#fdfdfe", "#ffffff"] },
+      "ink": { "role": "neutral", "displayName": "หมึกชัด (Ink)", "canonical": "#1f2933", "tonalRamp": ["#121820", "#1f2933", "#33404d", "#4b5a68", "#6a7885", "#94a0ac", "#c3ccd4", "#eef1f5"] },
+      "ink-muted": { "role": "neutral", "displayName": "หมึกจาง (Muted Ink)", "canonical": "#57606a", "tonalRamp": ["#2b3036", "#3c434b", "#57606a", "#6d7680", "#88919b", "#a6aeb7", "#c6ccd2", "#e8ebef"] },
+      "border": { "role": "neutral", "displayName": "เส้นดินสอ (Pencil Grey)", "canonical": "#d5dbe1", "tonalRamp": ["#6a7480", "#89939e", "#aab3bc", "#c3cad2", "#d5dbe1", "#e4e9ed", "#f0f3f5", "#f9fafb"] },
+      "hover-wash": { "role": "neutral", "displayName": "ฟ้าน้ำล้าง (Wash Blue)", "canonical": "#eef1f5", "tonalRamp": ["#8d97a3", "#a9b2bd", "#c2c9d1", "#d9dee4", "#e6eaef", "#eef1f5", "#f6f8fa", "#ffffff"] },
+      "danger-wash": { "role": "neutral", "displayName": "แดงน้ำล้าง (Wash Red)", "canonical": "#fbeeed", "tonalRamp": ["#a98985", "#c2a3a0", "#d9bcb9", "#ead4d1", "#f4e2e0", "#fbeeed", "#fdf6f5", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (h1)", "purpose": "หัวเรื่อง \"Todo List\" กึ่งกลางหน้า — ตัวเดียวต่อหน้า 28px (มือถือ 24px)" },
+      "body": { "displayName": "Body", "purpose": "ข้อความรายการ, modal, ปุ่ม — 16px cached system stack ห้าม webfont" },
+      "counter": { "displayName": "Counter", "purpose": "ตัวเลขสถานะ \"ค้าง/เสร็จแล้ว\" ในแถบล่าง 15px" },
+      "feedback": { "displayName": "Feedback", "purpose": "บรรทัดแจ้งเตือน 14px — ตอน error หนา 600 สีแดง" }
+    },
+    "shadows": [
+      { "name": "structural-lift", "value": "0 10px 30px rgba(0,0,0,0.25)", "purpose": "ใช้กับ modal เท่านั้น — แยก modal ออกจากโลกให้ผู้ใช้ตอบก่อน" },
+      { "name": "paper-float", "value": "0 1px 3px rgba(31,41,51,0.08)", "purpose": "ทางเลือก เงาแฝงจาง ๆ บนการ์ดรายการให้รู้สึกกระดาษลอย — ไม่ใช่ค่าเริ่ม" }
+    ],
+    "motion": [
+      { "name": "feedback-shake", "value": "shake 250ms ease-in-out", "purpose": "อนิเมชั่นเดียวของระบบ — ตอน validation ล้มเหลว ปิดเมื่อ prefers-reduced-motion: reduce" },
+      { "name": "state-change", "value": "instant (ไม่มี transition)", "purpose": "hover/focus เปลี่ยนทันที สอดคล้องหลัก feedback ทันที" }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "max-width: 767px", "purpose": "จุดเปลี่ยนเดียว: h1 หด 24px, input+ปุ่มตั้งซ้อน, icon-only, touch 44px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "ปุ่มหลัก (เพิ่ม)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "จุดลงมือทำเดียวของหน้า — พื้นน้ำเงินพึ่งพาได้ สูง 44px กดแล้วรู้ผลทันที",
+      "html": "<button class=\"ds-btn-primary\">เพิ่ม</button>",
+      "css": ".ds-btn-primary { background: #155ab6; color: #ffffff; border: 1px solid #155ab6; border-radius: 8px; padding: 8px 14px; min-height: 44px; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; } .ds-btn-primary:hover { background: #114a99; } .ds-btn-primary:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "ปุ่มรอง (ยกเลิก / ลบรายการที่เสร็จ)",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "ปุ่มพื้นขาวขอบเส้นดินสอ — hover เปลี่ยนพื้นเป็นฟ้าน้ำล้างเท่านั้น",
+      "html": "<button class=\"ds-btn-ghost\">ลบรายการที่เสร็จแล้ว</button>",
+      "css": ".ds-btn-ghost { background: #ffffff; color: #1f2933; border: 1px solid #d5dbe1; border-radius: 8px; padding: 8px 14px; min-height: 44px; font: inherit; cursor: pointer; white-space: nowrap; } .ds-btn-ghost:hover { background: #eef1f5; } .ds-btn-ghost:disabled { opacity: 0.55; cursor: not-allowed; } .ds-btn-ghost:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "ปุ่มลบถาวร (ยืนยัน)",
+      "kind": "button",
+      "refersTo": "button-danger-confirm",
+      "description": "แดงประตูไม่กลับ — ปุ่มยืนยันใน modal เท่านั้น",
+      "html": "<button class=\"ds-btn-danger-confirm\">ยืนยัน</button>",
+      "css": ".ds-btn-danger-confirm { background: #b3261e; color: #ffffff; border: 1px solid #b3261e; border-radius: 8px; padding: 8px 14px; min-height: 44px; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; } .ds-btn-danger-confirm:hover { background: #8f1e18; } .ds-btn-danger-confirm:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "ปุ่มลบรายการเดียว (danger ghost)",
+      "kind": "button",
+      "refersTo": "button-danger-ghost",
+      "description": "พื้นขาว ตัวหนังสือแดง — hover พื้นแดงน้ำล้าง",
+      "html": "<button class=\"ds-btn-danger-ghost\">ลบ</button>",
+      "css": ".ds-btn-danger-ghost { background: #ffffff; color: #b3261e; border: 1px solid #d5dbe1; border-radius: 8px; padding: 8px 14px; min-height: 44px; font: inherit; cursor: pointer; white-space: nowrap; } .ds-btn-danger-ghost:hover { background: #fbeeed; } .ds-btn-danger-ghost:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "ช่องกรอก (input text)",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "ช่องกรอกขาวขอบเส้นดินสอ สูง ≥44px placeholder หมึกจาง",
+      "html": "<input class=\"ds-input-text\" type=\"text\" placeholder=\"พิมพ์สิ่งที่ต้องทำ…\">",
+      "css": ".ds-input-text { flex: 1; min-height: 44px; padding: 10px 12px; font: inherit; color: #1f2933; background: #ffffff; border: 1px solid #d5dbe1; border-radius: 8px; } .ds-input-text::placeholder { color: #57606a; } .ds-input-text:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "Checkbox รายการ",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "กล่องขีดถูกแบบวาดเอง (appearance:none) — ติ๊กแล้วพื้นน้ำเงินพึ่งพาได้ เครื่องหมายถูกขาว SVG",
+      "html": "<label class=\"ds-checkwrap\"><input class=\"ds-check\" type=\"checkbox\" checked><span class=\"ds-checklabel\">รายการตัวอย่าง</span></label>",
+      "css": ".ds-checkwrap { display: flex; align-items: center; gap: 8px; } .ds-check { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; min-width: 24px; margin: 0; border: 2px solid #57606a; border-radius: 6px; background: #ffffff; cursor: pointer; } .ds-check:checked { background-color: #155ab6; border-color: #155ab6; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z' fill='white'/%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: center; background-size: 15px; } .ds-check:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; } .ds-checklabel { color: #1f2933; }"
+    },
+    {
+      "name": "Todo Item (แถวรายการ + การ์ด)",
+      "kind": "card",
+      "refersTo": "input-text",
+      "description": "แถวกระดาษในสมุด — การ์ดขาวเดียวแถวคั่นด้วยเส้น สถานะทำแล้วขีดฆ่าจาง",
+      "html": "<ul class=\"ds-todolist\"><li class=\"ds-todoitem\"><span class=\"ds-todotext\">ส่งรายงาน</span><button class=\"ds-itembtn ds-itemdanger\">ลบ</button></li><li class=\"ds-todoitem\"><span class=\"ds-todotext ds-donetext\">ซื้อกาแฟ</span><button class=\"ds-itembtn ds-itemdanger\">ลบ</button></li></ul>",
+      "css": ".ds-todolist { list-style: none; margin: 0; padding: 0; background: #ffffff; border: 1px solid #d5dbe1; border-radius: 8px; overflow: hidden; } .ds-todoitem { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #d5dbe1; } .ds-todoitem:last-child { border-bottom: none; } .ds-todotext { flex: 1; overflow-wrap: anywhere; word-break: break-word; color: #1f2933; } .ds-donetext { text-decoration: line-through; color: #57606a; } .ds-itembtn { min-height: 44px; padding: 8px 14px; font: inherit; border-radius: 8px; border: 1px solid #d5dbe1; background: #ffffff; cursor: pointer; } .ds-itemdanger { color: #b3261e; } .ds-itemdanger:hover { background: #fbeeed; } .ds-itembtn:focus-visible { outline: 3px solid #155ab6; outline-offset: 2px; }"
+    },
+    {
+      "name": "Modal ยืนยันการลบ",
+      "kind": "custom",
+      "refersTo": "modal",
+      "description": "หน่วยเดียวในระบบที่ลอย — backdrop บังโลก การ์ดขาวเงาหนา ต้องตอบก่อนจึงกลับได้",
+      "html": "<div class=\"ds-backdrop\"><div class=\"ds-modal\" role=\"dialog\" aria-modal=\"true\"><p>จะลบรายการที่เสร็จแล้ว 3 รายการ ใช่ไหม?</p><div class=\"ds-modal-actions\"><button class=\"ds-btn-ghost\">ยกเลิก</button><button class=\"ds-btn-danger-confirm\" style=\"background:#b3261e;color:#ffffff;border:1px solid #b3261e;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;\">ยืนยัน</button></div></div></div>",
+      "css": ".ds-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,0.5); } .ds-modal { width: 100%; max-width: 400px; padding: 20px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); } .ds-modal p { margin: 0 0 16px; color: #1f2933; font: inherit; line-height: 1.5; } .ds-modal-actions { display: flex; justify-content: flex-end; gap: 8px; } .ds-btn-ghost { background: #ffffff; color: #1f2933; border: 1px solid #d5dbe1; border-radius: 8px; padding: 8px 14px; min-height: 44px; font: inherit; cursor: pointer; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "โต๊ะทำงานที่จัดแล้ว",
+    "overview": "โต๊ะที่จัดแล้ว — ไม่มีของประดับ ไม่มีเมนูซ่อน ไม่มีตู้ล็อกเก็บรายการ ทุกอย่างที่จำเป็นอยู่บนพื้นผิวเดียว เปิดใช้ทันที เพิ่ม → ติ๊ก → ลบ จบใน 3 คลิก ความง่ายของโลกนี้ไม่ใช่ข้อจำกัดที่ต้องเสียใจ แต่เป็นจุดยืน: ทุกองค์ประกอบบนหน้าจอต้องมีหน้าที่เดียวและตอบผู้ใช้ทันที ไม่มีอะไรที่ \"แค่ทำให้อยากสวยไปอีก\" ถึงกระนั้นโลกนี้ไม่ได้เย็นชา — พื้นหลังเทาอุ่นบนการ์ดขาวเหมือนกระดาษวางบนโต๊ะ ให้ความรู้สึกอบอุ่น-นุ่มนวล ใช้ system stack เท่านั้น ไม่มี webfont เพื่อให้เปิดผ่าน file:// หรือ offline ได้จริง และทุกคอนโทรลใหญ่พอสำหรับนิ้ว (44px) เพื่อให้งานทั้งหมด \"แน่นและพร้อมมือ\"",
+    "keyCharacteristics": [
+      "แบนลงพื้นโดยปริยาย — แยกชั้นด้วยสีและเส้นขอบ เงามีบทบาทเดียวคือลอย modal ออกจากโลก",
+      "น้ำเงินมีบทบาทเดียว: จุดลงมือทำ (ปุ่มเพิ่ม, checkbox ติ๊กแล้ว, focus ring)",
+      "แดงมีบทบาทเดียว: ประตูที่ใช้แล้วไม่กลับ (ลบถาวร)",
+      "น้ำหนักตัวอักษรมีสองค่าเท่านั้น: 400 ปกติ, 600 สำหรับคำที่โครงหน้า (ปุ่มลงมือ/แจ้งเตือน)",
+      "ไม่มี dependency ใด ๆ — ทุกเอฟเฟกต์เป็น CSS ล้วน"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "น้ำเงินพึ่งพาได้ใช้ได้แค่ \"จุดลงมือทำ\" — ปุ่มเพิ่ม + checkbox ติ๊กแล้ว นอกนั้นบนหน้าจอเป็นหมึกกับเทาทั้งหมด ความหายากของสีคือสัญญาณที่ชี้นำสายตา", "section": "colors" },
+      { "name": "The Red Door Rule", "body": "แดงประตูไม่กลับใช้เฉพาะการลบข้อมูลแบบถาวรเท่านั้น ถ้ารายการย้อนกลับได้ (ยกเลิกติ๊ก) ไม่ใช่สีนี้", "section": "colors" },
+      { "name": "The Wash Rule", "body": "hover เปลี่ยนแค่พื้นหลังปุ่ม (ขาว → สีล้าง) ไม่เล่นขนาด เงา หรือ transform", "section": "colors" },
+      { "name": "The System Voice Rule", "body": "ห้ามโหลด webfont หรือ font ภายนอก — ภาษาไทยต้องแสดงชัดโดยพึ่ง font ในเครื่องเสมอ", "section": "typography" },
+      { "name": "The Flat Desk Rule", "body": "พื้นผิวปิดเรียบด้วยเส้นขอบทั้งระบบ เพิ่มเงาใหม่นอกจาก modal ไม่ได้ — ความลึกที่แท้จริงคือคอนทราสต์ข้อความ (หมึกชัด vs หมึกจาง) ไม่ใช่ความสูง", "section": "elevation" }
+    ],
+    "dos": [
+      "Do ตั้ง touch target ขั้นต่ำ 44×44px ทุกคอนโทรล (ปุ่ม, checkbox, input)",
+      "Do แสดงข้อความผู้ใช้ผ่าน textContent เท่านั้น — กัน XSS ไม่ว่าข้อความจะดูอันตรายแค่ไหน",
+      "Do ตรวจคอนทราสต์ WCAG 2.1 AA ทุกคู่ข้อความ/พื้น และคง aria-live/role dialog เดิมทุกตำแหน่ง",
+      "Do ให้ focus-visible ring 3px กับทุกอย่างที่โฟกัสได้",
+      "Do ให้ทุกการกระทำมี feedback ทันทีบนหน้าจอ — งานเป็น client-only ไม่มีสถานะรอ",
+      "Do เขียนป้ายเป็นไทยผสมอังกฤษตามธรรมชาติของงานจริง"
+    ],
+    "donts": [
+      "Don't เพิ่มสีใหม่นอกจากพาเลตต์นี้",
+      "Don't ใช้แดงประตูไม่กลับกับสิ่งที่ย้อนกลับได้",
+      "Don't เพิ่มเงานอกจาก modal (และเงาแฝง \"Paper Float\" ไว้เป็นทางเลือกบนการ์ดเท่านั้น)",
+      "Don't โหลด webfont หรือ dependency ภายนอกใด ๆ — ต้องเปิดผ่าน file:// และ offline ได้จริง",
+      "Don't เพิ่ม filter, due date, tag, drag-and-drop หรือหน้าตั้งค่า — ผู้ใช้ยืนยันออกจากขอบเขตแล้ว",
+      "Don't ทำอนิเมชั่นเกิน 250ms หรือเพิ่มโดยไม่มีเหตุผลชัด"
+    ]
+  }
+}

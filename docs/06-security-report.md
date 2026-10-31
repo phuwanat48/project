@@ -122,4 +122,49 @@
 - ข้อสังเกตเดิม 2.4 (CSP) และ 2.5 (input length) ยังคงเป็น Low/Info เช่นเดิม ไม่มีอะไรเปลี่ยน
 - ไม่พบช่องโหว่ระดับ Critical/High/Medium ทั้งรอบแรกและรอบนี้
 
+---
+
+## 6. ตรวจซ้ำรอบที่ 3 (2026-10-31) — หลัง dev polish UI (SVG icon + CSS tokens)
+
+ขอบเขตรอบนี้: การเปลี่ยนแปลงใหม่ 3 จุด — (1) `app.js` เปลี่ยนไอคอน emoji เป็น inline SVG สร้างด้วย `createElementNS`, (2) `styles.css` เพิ่ม CSS tokens / `color-scheme` / `::selection` / `caret-color` / `font-variant-numeric`, (3) `tests/helpers/stub-env.js` เพิ่ม `createElementNS` ใน DOM stub พร้อมยืนยันว่าข้อสรุปเดิม (หัวข้อ 1–5) ยังคงถูกต้อง
+
+### 6.1 ไอคอน inline SVG ใหม่ (`createIcon` / `createActionButton`)
+
+- **ไฟล์:บรรทัด:** `app.js:287–331 (SVG_NS, ICON_PATHS, createIcon, createActionButton), 282–283 (จุดเรียกใช้)`
+- **ผลตรวจ:**
+  - **ไม่มี SVG injection ผ่าน string:** ไม่มีการประกอบ SVG เป็น string แล้วส่งเข้า `innerHTML`/`insertAdjacentHTML` — SVG ทั้ง element สร้างด้วย `document.createElementNS(SVG_NS, "svg")` (app.js:302) และ `createElementNS(SVG_NS, "path")` (app.js:308) แล้ว append ผ่าน `appendChild` เท่านั้น
+  - **ไม่มี attribute injection ผ่าน namespace:** `setAttribute` ถูกเรียกด้วยค่าคงที่ทั้งหมด — `"viewBox": "0 0 24 24"` (app.js:303), `"aria-hidden": "true"` (app.js:304), `"focusable": "false"` (app.js:305), และ `path.setAttribute("d", d)` (app.js:309) โดย `d` มาจาก `ICON_PATHS` ซึ่งเป็น **constant object ที่ hardcode ไว้ในโค้ด** (app.js:292–299) ไม่มีข้อมูลผู้ใช้เข้าเกี่ยวข้องแม้แต่ byte เดียว
+  - **ไม่มีการอ้างอิงข้อมูลผู้ใช้ใน SVG path:** ตรวจทุก call site ของ `createIcon` — ถูกเรียกจาก `createActionButton` (app.js:324) ด้วยพารามิเตอร์ `icon` ที่ส่งเป็น literal `"edit"`/`"delete"` จาก `createTodoItem` (app.js:282–283, 265–266) ไม่มีทางที่ `todo.text` หรือ `todo.id` ไหลเข้า `ICON_PATHS[name]` ได้ (และถ้า `name` ไม่อยู่ใน `ICON_PATHS` จะเกิด TypeError ทันที ไม่ใช่ render อะไรที่ควบคุมไม่ได้ — แต่ call site ทั้งหมดส่ง literal อยู่แล้ว)
+  - **ไม่มี event handler ใน SVG:** ไม่มี `onload`/`onerror`/`onclick` attribute ใด ๆ ต่อท้าย SVG หรือ path — SVG มีแค่ `viewBox`, `aria-hidden`, `focusable`, `class` (ผ่าน `classList.add` ไม่ใช่ string)
+  - **สไตล์ผ่าน CSS ฝั่งเดียว:** สี/ขนาดไอคอนกำหนดใน `styles.css:116–126` (`.btn-icon` ใช้ `stroke: currentColor`, `fill: none`) — ไม่มี inline style ที่ประกอบจาก string
+  - การเปลี่ยนจาก emoji (text node) เป็น SVG ไม่กระทบ surface เดิม: ปุ่มยังมี `aria-label` ผ่าน `setAttribute` (app.js:320) และ label ยังตั้งผ่าน `textContent` (app.js:328)
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่ — วิธีสร้าง SVG แบบนี้เป็นวิธีที่ปลอดภัยที่สุด (DOM API + constant path data)
+
+### 6.2 CSS ที่เพิ่มใหม่ (tokens, color-scheme, ::selection, caret-color, font-variant-numeric)
+
+- **ไฟล์:บรรทัด:** `styles.css:8–26 (tokens + color-scheme), 116–126 (.btn-icon), 128–130 (caret-color), 132–135 (::selection), 249–255 (font-variant-numeric), 372–396 (responsive icon-only)`
+- **ผลตรวจ:**
+  - ค่าทั้งหมดเป็น literal คงที่ (สี hex, rgba, px) ไม่มีการ interpolate ข้อมูลจากภายนอก — CSS เป็น static file ไม่มี template engine
+  - ไม่มี `url()` ใหม่, ไม่มี `@import`, ไม่มี external resource — `url()` เดียวในไฟล์ยังเป็น `data:` URI SVG ที่ hardcode เดิม (styles.css:192, ยืนยันแล้วในรอบแรก)
+  - `color-scheme: light` (styles.css:25) เป็นการบังคับธีมสว่างของ browser surface (scrollbar/caret) — เป็นการลดความเสี่ยง visual spoofing เล็กน้อย ไม่มีผลลบด้านความปลอดภัย
+  - `::selection` (styles.css:133) ใช้ `rgba(21, 90, 182, 0.18)` คงที่ — ไม่มี `!important` ที่ override สีข้อความจนอ่านไม่ออก (contrast ยังคุมได้)
+  - `font-variant-numeric: tabular-nums` (styles.css:254) เป็น typography-only property ไม่มีผลด้านความปลอดภัย
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่
+
+### 6.3 stub `createElementNS` ใน `tests/helpers/stub-env.js`
+
+- **ไฟล์:บรรทัด:** `tests/helpers/stub-env.js:193–194`
+- **ผลตรวจ:**
+  - stub ใหม่ `doc.createElementNS = (_ns, tag) => createElement(doc, tag)` เป็นเพียง alias ไปยัง `createElement` เดิมที่ตรวจแล้ว — ไม่มี logic ใหม่, ไม่มีการ parse string, ไม่มีการประเมิน namespace จากข้อมูลภายนอก (พารามิเตอร์ `_ns` ถูกละทิ้ง)
+  - อยู่ในไฟล์ test helper เท่านั้น ไม่ถูก bundle ไปกับโค้ดที่รันจริงในเบราว์เซอร์ (`app.js` ไม่ import ไฟล์นี้) — แม้ stub มีข้อจำกัดอะไรก็ไม่มีผลต่อ production
+  - ไม่มี secret, ไม่มี network, ไม่มี `eval` เพิ่มในไฟล์
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่ (test-only code)
+
+### 6.4 ยืนยันข้อสรุปเดิม
+
+- grep ซ้ำ `innerHTML|insertAdjacentHTML|document\.write|eval\(|new Function|outerHTML` บนโค้ดแอป (`app.js`, `index.html`, `styles.css`, `tests/`) → 0 match ในโค้ดจริง (match ที่พบทั้งหมดอยู่ใน `.opencode/skills/` ซึ่งเป็น tooling ของ agent ไม่ใช่โค้ดแอป นอกขอบเขตเช่นเดิม)
+- grep ซ้ำ `url\(|@import|fetch\(|XMLHttpRequest|setAttributeNS` บนโค้ดแอป → มีเพียง `url("data:image/svg+xml,...")` ที่ hardcode เดิมใน `styles.css:192` — ไม่มี external resource, ไม่มี network call
+- ข้อสังเกตเดิม 2.4 (CSP) และ 2.5 (input length) ยังคงเป็น Low/Info เช่นเดิม ไม่มีอะไรเปลี่ยน
+- ไม่พบช่องโหว่ระดับ Critical/High/Medium ทั้ง 3 รอบ
+
 RESULT: PASS

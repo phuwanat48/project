@@ -190,6 +190,8 @@ function createDocument() {
   doc.body = createElement(doc, "body");
   doc.activeElement = doc.body;
   doc.createElement = (tag) => createElement(doc, tag);
+  // app.js ใช้ createElementNS สำหรับไอคอน SVG — stub ให้ behaves เหมือน createElement
+  doc.createElementNS = (_ns, tag) => createElement(doc, tag);
   doc.getElementById = (id) => (doc._ids && doc._ids[id]) || null;
   doc.addEventListener = (t, fn) => {
     (doc.listeners[t] = doc.listeners[t] || []).push(fn);

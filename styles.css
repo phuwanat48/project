@@ -15,8 +15,14 @@
   --color-danger: #b3261e;
   --color-danger-dark: #8f1e18;
   --color-border: #d5dbe1;
+  --color-wash-blue: #eef1f5;    /* hover ปุ่มรอง */
+  --color-wash-red: #fbeeed;     /* hover ปุ่มลบรายการเดียว */
   --color-focus: #155ab6;
   --radius: 8px;
+  --radius-sm: 6px;              /* checkbox 24px */
+  --radius-lg: 12px;             /* modal */
+  /* บังคับธีมสว่างให้ scrollbar/caret ของเบราว์เซอร์ตรงโลกของหน้า */
+  color-scheme: light;
 }
 
 * {
@@ -69,6 +75,10 @@ h1 {
 /* ---- ปุ่มทั่วไป ---- */
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 44px;
   padding: 8px 14px;
   font: inherit;
@@ -81,7 +91,7 @@ h1 {
 }
 
 .btn:hover {
-  background: #eef1f5;
+  background: var(--color-wash-blue);
 }
 
 #add-btn {
@@ -100,11 +110,28 @@ h1 {
 }
 
 .btn-delete:hover {
-  background: #fbeeed;
+  background: var(--color-wash-red);
 }
 
+/* ไอคอน inline SVG — stroke สีตามปุ่ม (currentColor), น้ำหนักเดียวทั้งระบบ */
 .btn-icon {
-  font-size: 16px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+input {
+  caret-color: var(--color-primary);
+}
+
+/* ข้อความเลือก (browser surface) — ฟ้าล้างจาก primary ไม่กลืนตัวหนังสือ */
+::selection {
+  background: rgba(21, 90, 182, 0.18);
 }
 
 /* ---- พื้นที่ feedback (แสดงเมื่อมีข้อผิดพลาดเท่านั้น) ---- */
@@ -154,7 +181,7 @@ h1 {
   min-width: 24px;
   margin: 0;
   border: 2px solid var(--color-text-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   cursor: pointer;
 }
@@ -189,6 +216,7 @@ h1 {
   padding: 8px 10px;
   font: inherit;
   color: var(--color-text);
+  background: var(--color-surface);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius);
 }
@@ -223,6 +251,7 @@ h1 {
   gap: 16px;
   margin: 0;
   font-size: 15px;
+  font-variant-numeric: tabular-nums; /* ตัวเลขเปลี่ยนไม่กระตุกความกว้าง */
 }
 
 #clear-completed-btn:disabled {
@@ -295,7 +324,7 @@ h1 {
   max-width: 400px;
   padding: 20px;
   background: var(--color-surface);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
@@ -340,7 +369,7 @@ h1 {
     width: 100%;
   }
 
-  /* ปุ่มแก้ไข/ลบย่อเป็น icon-only (✎ / 🗑) — aria-label อยู่ที่ปุ่มแล้ว */
+  /* ปุ่มแก้ไข/ลบย่อเป็น icon-only (SVG ไอคอน+aria-label ที่ปุ่มแล้ว) */
   .btn-edit .btn-label,
   .btn-delete .btn-label {
     display: none;
@@ -353,7 +382,8 @@ h1 {
   }
 
   .btn-icon {
-    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 
   /* ขยาย checkbox เป็น touch target 44px */

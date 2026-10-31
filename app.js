@@ -279,9 +279,37 @@ function createTodoItem(todo) {
   text.textContent = todo.text; // กัน XSS — แสดงเป็นข้อความธรรมดาเสมอ
   li.appendChild(text);
 
-  li.appendChild(createActionButton("edit", "แก้ไข", "แก้ไขรายการนี้", "✎"));
-  li.appendChild(createActionButton("delete", "ลบ", "ลบรายการนี้", "🗑"));
+  li.appendChild(createActionButton("edit", "แก้ไข", "แก้ไขรายการนี้", "edit"));
+  li.appendChild(createActionButton("delete", "ลบ", "ลบรายการนี้", "delete"));
   return li;
+}
+
+/* ---- ไอคอน inline SVG (stroke currentColor น้ำหนักเดียว) ---- */
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// เส้นทางของไอคอนแต่ละชนิด — viewBox 24×24, ใช้กับ fill:none + stroke
+const ICON_PATHS = {
+  edit: ["M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"],
+  delete: [
+    "M3 6h18",
+    "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6",
+    "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+  ],
+};
+
+function createIcon(name) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  svg.classList.add("btn-icon");
+  for (const d of ICON_PATHS[name]) {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", d);
+    svg.appendChild(path);
+  }
+  return svg;
 }
 
 function createActionButton(action, label, ariaLabel, icon) {
@@ -291,11 +319,9 @@ function createActionButton(action, label, ariaLabel, icon) {
   btn.dataset.action = action;
   btn.setAttribute("aria-label", ariaLabel);
   if (icon) {
-    const iconSpan = document.createElement("span");
-    iconSpan.className = "btn-icon";
-    iconSpan.setAttribute("aria-hidden", "true");
-    iconSpan.textContent = icon;
-    btn.appendChild(iconSpan);
+    // ไอคอนเป็น inline SVG วาดเอง (stroke เดียว, สีตาม currentColor)
+    // — ไม่ใช้ emoji/Unicode glyph เพราะสรรเสริญข้ามแพลตฟอร์มไม่คงที่
+    btn.appendChild(createIcon(icon));
   }
   const labelSpan = document.createElement("span");
   labelSpan.className = "btn-label";

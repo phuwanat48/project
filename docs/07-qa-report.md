@@ -240,4 +240,96 @@ Logic ทั้งหมดของแอป (state, persistence, validation, a
 
 การแก้ O-1/O-2 ของ dev **ถูกต้อง ตรงขอบเขต และไม่ทำลาย AC เดิม**: (1) หลังยืนยัน clear completed เมื่อปุ่ม disabled focus ถูกย้ายไป todo-input แทนการหลุดไป body (2) Esc ในโหมดแก้ไขใช้ `cancelEditing(li)` ทำให้พฤติกรรมเหมือนปุ่มยกเลิกเป๊ะ ๆ รวมถึงคืน focus ที่ปุ่มแก้ไขของแถวเดิม โดยไม่ทำลาย guard กันบันทึกหลัง Esc (TC-E.9 ยังผ่าน) เทสที่ dev ปรับ (TC-006.9) และเพิ่ม (TC-005.12) เป็นการปรับที่**สมเหตุสมผลและเข้มขึ้น** ไม่ใช่การปรับเทสให้ผ่านเพื่อซ่อนบั๊ก ผลรันอิสระ 54/54 ผ่านครบ
 
+---
+
+# ตรวจซ้ำรอบที่ 3 — หลัง polish UI (ไอคอน SVG + CSS tokens + ปรับ stub)
+
+> วันที่ตรวจ: 2026-10-31 | ขอบเขต: ตรวจซ้ำอิสระการแก้ polish 3 ไฟล์ + regression ทั้งชุดเทส
+> หมายเหตุ: ห้ามแก้โค้ดหลัก/โค้ดแอปในรอบนี้ — QA รันเทส ตรวจ diff และตรวจโครงสร้าง DOM ที่ render จริงเท่านั้น
+
+## 13. ขอบเขตการแก้ครั้งนี้ (ตรวจจาก `git diff` อิสระ — การแก้ยังไม่ commit อยู่ใน working tree)
+
+| ไฟล์ | รายละเอียดที่พบใน diff |
+|---|---|
+| `app.js` | (1) ไอคอนปุ่มแก้ไข/ลบเปลี่ยนจาก emoji (`✎`/`🗑` ใน `<span class="btn-icon">`) เป็น inline SVG ผ่าน `createElementNS` ใหม่ (`createIcon` + `ICON_PATHS`, viewBox 24×24, `aria-hidden="true"`, `focusable="false"`, class `btn-icon`) (2) `createActionButton` รับชื่อไอคอนแทน emoji — **`data-action`, `aria-label`, `<span class="btn-label">` คงเดิมทุกอย่าง** |
+| `styles.css` | เพิ่ม CSS tokens (`--color-wash-blue/red`, `--radius-sm/lg`), `color-scheme: light`, `::selection`, `caret-color`, `font-variant-numeric: tabular-nums`, `.btn` เป็น inline-flex + gap, `.btn-icon` เปลี่ยนจาก `font-size` (emoji) เป็น `width/height` + `stroke: currentColor` (SVG) — ล้วนเป็น CSS ไม่กระทบ logic |
+| `tests/helpers/stub-env.js` | เพิ่มบรรทัดเดียว: `doc.createElementNS = (_ns, tag) => createElement(doc, tag)` |
+| `tests/app.test.js` | **ไม่ถูกแก้เลยในรอบนี้** (ยืนยันจาก `git status` — ไม่อยู่ในรายการ modified) |
+
+หมายเหตุ: `docs/06-security-report.md` ถูกแก้ใน working tree ด้วย — เป็นไฟล์ของ security ไม่อยู่ในขอบเขตตรวจของ QA / `.impeccable/` และ `DESIGN.md` เป็นไฟล์ design system ใหม่ (untracked) ไม่ใช่โค้ดแอป
+
+## 14. ผลรันเทสอิสระ (รอบที่ 3)
+
+รัน `node tests/app.test.js` เอง (ไม่อิงผลรายงานของผู้ทำ polish):
+
+```
+รวมทั้งหมด: 54 | ผ่าน: 54 | ไม่ผ่าน: 0
+```
+
+ตรงกับที่ผู้ทำ polish รายงาน (54/54)
+
+## 15. ตรวจว่าการเปลี่ยนไอคอนเป็น SVG ไม่ทำลาย AC เดิม
+
+นอกจากเทสชุดเดิม รันสคริปต์ ad-hoc ตรวจโครงสร้าง DOM ที่ render จริง (ผ่าน stub เดียวกับเทส) ผลทุกข้อตรงตามคาด:
+
+| การตรวจ | ผลที่คาดหวัง | ผลจริง |
+|---|---|---|
+| ปุ่มแก้ไข/ลบค้นหาได้ด้วย `button[data-action="edit"/"delete"]` | เจอ `<button>` จริง | PASS (tagName BUTTON, data-action ถูกต้อง) |
+| `aria-label` ครบ | `แก้ไขรายการนี้` / `ลบรายการนี้` | PASS |
+| SVG ไอคอน | viewBox `0 0 24 24`, `aria-hidden="true"`, `focusable="false"`, class `btn-icon`, path ครบ (edit 1 path, delete 3 paths) | PASS |
+| ปุ่มยังมี text label | `<span class="btn-label">` = `แก้ไข` / `ลบ` (สำหรับ responsive ที่ซ่อน label บนมือถือ aria-label ยังอยู่ที่ปุ่ม) | PASS |
+| SVG ไม่รบกวน selector อื่น | `querySelectorAll("button")` = 2, `.btn-label` = 2 (SVG ไม่ถูกนับ) | PASS |
+| **TC-005.12** (Esc → focus ปุ่มแก้ไขของแถวเดิม) | focus ไปที่ปุ่มแก้ไขแถว A | PASS (ทั้งจากเทสชุดและ ad-hoc — ปุ่ม `.btn-edit` ยังถูกสร้างและ focus ได้เหมือนเดิม เพราะโครงสร้างปุ่มนอกเหนือจากไอคอนไม่เปลี่ยน) |
+| XSS ยังปลอดภัย | ไอคอนสร้างจาก `ICON_PATHS` คงที่ในโค้ด ไม่มี input ผู้ใช้เข้าเส้นทาง SVG + TC-E.1/TC-E.4 ยัง PASS | PASS |
+
+ข้อสังเกตเชิงเทคนิค: `onListClick` ใช้ `event.target.closest("button[data-action]")` — ในเบราว์เซอร์จริงเมื่อผู้ใช้คลิกโดนตัว SVG/path, `closest()` ของ SVGElement ยังไต่ขึ้นหา `<button>` ได้ จึงคลิกโดนไอคอนก็ทำงานถูก (stub ทดสอบโดยส่งปุ่มตรง ๆ จึงไม่ครอบ path นี้ — ดูข้อจำกัดข้อ 1 เดิม)
+
+## 16. ตรวจความสมเหตุสมผลของการปรับ `stub-env.js`
+
+| หัวข้อ | ประเมิน |
+|---|---|
+| ทำไมต้องแก้ | ก่อนแก้ stub ไม่มี `document.createElementNS` — พอ `app.js` เรียก `createIcon()` ตอน render ปุ่มทุกแถว จะโยน `TypeError: document.createElementNS is not a function` ทำให้เทสล่มทั้งชุด การเพิ่ม `createElementNS` จึงเป็น**การอัปเดต test adapter ที่จำเป็น** เพื่อให้รัน `app.js` จริงใน sandbox ต่อได้ |
+| เป็นการหลอกเทสให้ผ่านหรือไม่ | **ไม่ใช่** — (1) ไม่มี assertion ใดถูกลดทอน/ลบ (`tests/app.test.js` ไม่ถูกแก้ในรอบนี้) (2) stub ใหม่ implement พอดีกับที่ `app.js` ใช้จริงกับ SVG (`setAttribute`, `classList.add`, `appendChild`) ไม่ได้ fake พฤติกรรมที่เทสอ้างสิทธิ์ (3) ทุกเทสเดิม 53 เคส + TC-005.12 ยัง assert เหมือนเดิมทุกข้อ |
+| ความเที่ยงตรงของ stub | ยอมรับได้ — stub สร้าง generic element (tagName `SVG`/`PATH`) แทน SVGElement จริง (เช่น `className` จริงเป็น SVGAnimatedString) แต่ `app.js` ไม่ได้ใช้ API เฉพาะ SVG นอกเหนือจาก 3 อย่างข้างบน จึงไม่มีช่องทางที่ stub อ่อนกว่าจริงจนปล่อยบั๊กผ่าน (ดูข้อสังเกต N-3) |
+
+## 17. Regression ต่อ AC เดิม (US-001–US-007) — รอบที่ 3
+
+รันซ้ำทั้งชุด 54 เคส — ครบทุกกลุ่ม ไม่มีเคสใดเสีย:
+
+| กลุ่ม | จำนวน | ผล |
+|---|---|---|
+| US-001 เพิ่มรายการ | 5 | PASS ทั้งหมด |
+| US-002 ลบรายการ | 4 | PASS ทั้งหมด |
+| US-003 ติ๊กเสร็จ/ยกเลิก | 4 | PASS ทั้งหมด |
+| US-004 localStorage / ข้อมูลเสียหาย | 6 | PASS ทั้งหมด |
+| US-005 แก้ไขข้อความ (รวม TC-005.12) | 12 | PASS ทั้งหมด |
+| US-006 clear completed + modal | 10 | PASS ทั้งหมด |
+| US-007 นับจำนวน | 3 | PASS ทั้งหมด |
+| Edge cases / ความปลอดภัย | 10 | PASS ทั้งหมด |
+
+จุดที่เช็คเป็นพิเศษเพราะอาจถูกการเปลี่ยนไอคอนกระทบ — ผ่านทั้งหมด: TC-002.1 (ปุ่มลบ + label + aria-label), TC-005.1 (ปุ่มแก้ไข/ซ่อนปุ่มตอน editing), TC-005.9/TC-005.12 (focus กลับปุ่มแก้ไขหลังยกเลิก/Esc), TC-E.7 (event delegation — ปุ่มยังไม่มี listener ต่อรายการ)
+
+## 18. ข้อสังเกตเพิ่มเติม (รอบที่ 3)
+
+| # | ระดับ | รายละเอียด | ไฟล์ที่เกี่ยวข้อง |
+|---|---|---|---|
+| N-3 | Info (ข้อจำกัด stub) | stub `createElementNS` ไม่แยก namespace และไม่จำลอง SVG API จริงทั้งหมด (เช่น `getBBox`, `className` แบบ SVGAnimatedString) — ปัจจุบัน `app.js` ใช้แค่ setAttribute/classList/appendChild จึงไม่มีผล แต่ถ้าอนาคตใช้ API เฉพาะ SVG เพิ่ม ต้องอัปเดต stub ตาม | `tests/helpers/stub-env.js` |
+| N-4 | Info (ข้อจำกัดเดิม) | คุณภาพการ render SVG จริง (stroke ผ่าน `currentColor`, ขนาด 16/18px, `::selection`, `caret-color`, `color-scheme`, `tabular-nums`) เป็น visual/CSS ที่ยังต้องตรวจด้วยตาในเบราว์เซอร์จริงตามข้อจำกัดในข้อ 1 — stub ตรวจโครงสร้าง DOM/attribute ได้เท่านั้น | `styles.css`, `app.js` |
+
+ไม่พบบั๊กใหม่จากการแก้ polish รอบนี้
+
+## 19. สถิติ (รอบที่ 3)
+
+| รายการ | จำนวน |
+|---|---|
+| เทสทั้งหมด | 54 |
+| ผ่าน | 54 |
+| ไม่ผ่าน | 0 |
+| บั๊กที่ต้องแก้ | 0 |
+| ข้อสังเกตไม่บล็อก | 2 ใหม่ (N-3, N-4 — ระดับ Info) |
+
+## 20. สรุป (รอบที่ 3)
+
+การ polish UI รอบนี้**อยู่ในขอบเขต ไม่ทำลาย AC เดิม และไม่มีบั๊ก**: (1) ไอคอน SVG ผ่าน `createElementNS` คง `data-action`/`aria-label`/`btn-label` ครบ ปุ่มแก้ไขยังค้นหาและรับ focus ได้เหมือนเดิม (TC-005.12 ผ่าน) (2) การแก้ `styles.css` ล้วนเป็น CSS tokens/visual ไม่กระทบ logic (3) การเพิ่ม `createElementNS` ใน stub เป็นการอัปเดต test adapter ที่**จำเป็นและสมเหตุสมผล** — ไม่มีการแก้เทสให้ผ่านเพื่อซ่อนบั๊ก (`tests/app.test.js` ไม่ถูกแตะในรอบนี้) ผลรันอิสระ 54/54 ผ่านครบ เหลือเฉพาะการตรวจ visual ในเบราว์เซอร์จริงตามข้อจำกัดเดิม (N-4)
+
 RESULT: PASS
