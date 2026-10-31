@@ -24,7 +24,9 @@ Static client-side ล้วน 3 ไฟล์ ไม่มี dependency แล
 - **Render แบบ rebuild**: `renderList()` ล้าง `<ul>` แล้วสร้าง `<li>` ใหม่ทั้งหมด — ยกเว้นตอนจบโหมดแก้ไขที่ใช้ `li.replaceWith()` แบบ in-place เพื่อไม่ทำลาย element ที่กำลังรับ event
 - **Event delegation**: ผูก listener บน `<ul>` ครั้งเดียว (`change`, `click`, `dblclick`, `keydown`, `focusout`, `mousedown`) — ห้ามผูกต่อรายการใน `render()`
 - **ความปลอดภัย**: ข้อความผู้ใช้ทุกจุดตั้งผ่าน `textContent` เท่านั้น — **ห้าม** `innerHTML` / `insertAdjacentHTML` / `document.write` (กัน XSS)
-- **Modal ยืนยัน**: `openConfirmModal(message, onConfirm)` เก็บ callback + focus เดิม, focus ปุ่ม "ยกเลิก" ก่อน, Tab ถูก trap ใน modal, Esc/คลิก backdrop = ยกเลิก
+- **Modal ยืนยัน**: `openConfirmModal(message, onConfirm)` เก็บ callback + focus เดิม, focus ปุ่ม "ยกเลิก" ก่อน, Tab ถูก trap ใน modal, Esc/คลิก backdrop = ยกเลิก และ `closeConfirmModal()` คืน focus ที่ element เดิมเสมอ
+- **Focus หลังยืนยันลบที่เสร็จแล้ว**: `confirmModalAction()` หลัง `closeConfirmModal()` + `onConfirm()` แล้ว ถ้าปุ่ม clear กลายเป็น disabled (`els.clearBtn.disabled` เพราะไม่เหลือรายการที่เสร็จแล้ว) จะเรียก `els.todoInput.focus()` เพื่อไม่ให้ focus หลุดไป body หลัง `render()` — กรณียกเลิก/Esc/backdrop ปุ่มยัง enabled จึงคืน focus ที่ปุ่มเดิมตามปกติ
+- **Focus หลังออกจากโหมดแก้ไข**: ทั้งปุ่มยกเลิกและกด **Esc** ใน `onListKeydown` ใช้ `cancelEditing(li)` เดียวกัน — ตั้ง `editingId = null` ก่อน `li.replaceWith()` แล้ว focus ปุ่มแก้ไข (`.btn-edit`) ของแถวเดิม (การตั้ง `editingId` ก่อน replaceWith สำคัญ เพื่อให้ guard ใน `onListFocusout` ยังกันบันทึกหลัง Esc ได้)
 
 ---
 

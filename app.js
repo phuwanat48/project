@@ -175,6 +175,13 @@ function confirmModalAction() {
   const onConfirm = modalOnConfirm;
   closeConfirmModal();
   if (typeof onConfirm === "function") onConfirm();
+  // O-1 (a11y): หลังยืนยัน clear completed ปุ่ม clear จะกลายเป็น disabled
+  // (ไม่เหลือรายการที่เสร็จแล้ว) ทำให้ focus ที่เพิ่งคืนกลับหลุดไปที่ body
+  // จึงย้าย focus ไปที่ todo-input — element หลักที่ผู้ใช้ใช้งานต่อได้ทันที
+  // (กรณียกเลิก/Esc/backdrop ปุ่ม clear ยัง enabled จึงคืน focus ที่ปุ่มเดิมตาม closeConfirmModal)
+  if (els.clearBtn.disabled) {
+    els.todoInput.focus();
+  }
 }
 
 // ดัก Tab ให้วนอยู่ใน modal เท่านั้น (focus trap แบบง่าย — ใน modal มี 2 ปุ่ม)
@@ -500,9 +507,10 @@ function onListKeydown(event) {
   } else if (event.key === "Escape") {
     event.preventDefault();
     // ยกเลิก: ไม่บันทึก — ข้อความเดิมคงอยู่
-    // editingId เปลี่ยนก่อน เผื่อ blur ตามมาจะไม่บันทึก (edge 9.5)
-    state.editingId = null;
-    render();
+    // ใช้ cancelEditing เพื่อให้พฤติกรรมเหมือนปุ่มยกเลิกเป๊ะ ๆ:
+    // editingId เปลี่ยนก่อน (กัน blur ตามมาไม่ให้บันทึก — edge 9.5)
+    // แล้วคืน focus ที่ปุ่มแก้ไขของแถวเดิม (O-2 a11y)
+    cancelEditing(li);
   }
 }
 

@@ -90,4 +90,36 @@
 
 ไม่พบช่องโหว่ระดับ Critical/High/Medium โค้ดปฏิบัติตามข้อกำหนดความปลอดภัยใน `docs/04-spec.md` หัวข้อ 8 ครบทั้ง 7 ข้อ มีเพียงข้อเสนอแนะเชิงป้องกันระดับ Low/Info (ข้อ 2.4, 2.5) ที่ dev เลือกแก้ได้ตามความเหมาะสม ไม่บังคับ
 
+---
+
+## 5. ตรวจซ้ำรอบที่ 2 (2026-10-31) — หลัง dev แก้ a11y 2 จุดใน app.js
+
+ขอบเขตรอบนี้: เฉพาะการเปลี่ยนแปลงใหม่ 2 จุด พร้อมยืนยันว่าข้อสรุปเดิม (หัวข้อ 1–4) ยังคงถูกต้อง
+
+### 5.1 การแก้ O-1: `confirmModalAction` focus ไปที่ todo-input เมื่อปุ่ม clear disabled
+
+- **ไฟล์:บรรทัด:** `app.js:174–185`
+- **ผลตรวจ:**
+  - โค้ดใหม่เป็นเพียงการเรียก `els.todoInput.focus()` ตามเงื่อนไข `els.clearBtn.disabled` — ไม่มีการสร้าง/แก้ DOM ด้วย string, ไม่มี `innerHTML`, ไม่มีการอ้างอิง element จากข้อมูลผู้ใช้ (`todo-input` เป็น static ref จาก `getElementById` ตอน init)
+  - ลำดับการทำงานปลอดภัย: `closeConfirmModal()` คืน focus ตามปกติก่อน แล้วจึงย้ายไป `todo-input` ถ้าปุ่ม disabled — ไม่มีผลต่อ state หรือ persistence
+  - ไม่มี event handler ใหม่, ไม่มีข้อมูลผู้ใช้เข้าเกี่ยวข้องใน path นี้
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่
+
+### 5.2 การแก้ O-2: Esc ในโหมดแก้ไขเรียก `cancelEditing(li)`
+
+- **ไฟล์:บรรทัด:** `app.js:408–422 (cancelEditing), 507–514 (onListKeydown)`
+- **ผลตรวจ:**
+  - `cancelEditing` สร้างแถวใหม่ผ่าน `createTodoItem(todo)` เท่านั้น ซึ่งใช้ `createElement` + `textContent` + `dataset` + `setAttribute` ทั้งหมด (ยืนยันแล้วในข้อ 2.1 รอบก่อน) — ไม่มี HTML string, ไม่มี XSS surface ใหม่จาก in-place `replaceWith`
+  - `todo` มาจาก `state.todos` ซึ่งผ่าน `validateTodos()` ตอน `load()` แล้ว — ไม่มีข้อมูลดิบจาก localStorage หลุดเข้า DOM
+  - ลำดับ `state.editingId = null` ก่อน `replaceWith` ทำให้ `onListFocusout` (app.js:519–529) ไม่บันทึกซ้ำจาก blur ที่ตามมา — พฤติกรรมตรงกับปุ่มยกเลิก ไม่มี state inconsistency ที่นำไปสู่ช่องโหว่
+  - focus คืนที่ `.btn-edit` ของแถวเดิม — element ที่สร้างเองในฟังก์ชันเดียวกัน ไม่มีการอ้างอิง element ที่ผู้ใช้ควบคุมได้
+  - ไม่มี event handler ใหม่ถูกผูก (ยังใช้ event delegation เดิม)
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่
+
+### 5.3 ยืนยันข้อสรุปเดิม
+
+- grep ซ้ำ `innerHTML|insertAdjacentHTML|document.write|eval|new Function` → 0 match
+- ข้อสังเกตเดิม 2.4 (CSP) และ 2.5 (input length) ยังคงเป็น Low/Info เช่นเดิม ไม่มีอะไรเปลี่ยน
+- ไม่พบช่องโหว่ระดับ Critical/High/Medium ทั้งรอบแรกและรอบนี้
+
 RESULT: PASS

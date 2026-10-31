@@ -483,6 +483,23 @@ test("TC-005.11", "แก้ไขเป็นข้อความเดิม�
   assert.strictEqual(textOf(app, id), "งานเดิม");
 });
 
+test("TC-005.12", "Esc ในโหมดแก้ไข → focus กลับที่ปุ่มแก้ไขของแถวเดิม (เช่นเดียวกับปุ่มยกเลิก — O-2)", () => {
+  const app = loadApp();
+  seed(app, ["A", "B"]);
+  const [idA, idB] = todoIds(app);
+  startEdit(app, idA);
+  editInput(app, idA).value = "พิมพ์ค้างไว้";
+  pressKey(app, "Escape", editInput(app, idA));
+  assert.strictEqual(app.api.state.editingId, null, "ต้องออกจากโหมดแก้ไข");
+  assert.strictEqual(textOf(app, idA), "A", "ข้อความเดิมคงอยู่");
+  assert.strictEqual(
+    app.doc.activeElement,
+    btnOf(app, idA, "edit"),
+    "focus ต้องกลับที่ปุ่มแก้ไขของแถวเดิม (แถว A) ไม่ใช่แถวอื่น"
+  );
+  assert.notStrictEqual(app.doc.activeElement, btnOf(app, idB, "edit"), "ต้องไม่ focus ปุ่มแก้ไขของแถวอื่น");
+});
+
 /* ============================================================
  * US-006 — ลบรายการที่เสร็จแล้วทั้งหมด + custom modal
  * ============================================================ */
@@ -599,18 +616,24 @@ test("TC-006.8", "focus trap: Tab/Shift+Tab วนอยู่เฉพาะป
   assert.strictEqual(app.doc.activeElement, el(app, "modal-confirm"), "Shift+Tab จากยกเลิก → ยืนยัน (วนย้อน)");
 });
 
-test("TC-006.9", "ปิด modal (ทุกวิธี) → focus ถูกคืนกลับที่ปุ่ม clear completed", () => {
+test("TC-006.9", "ปิด modal → Esc/ยกเลิก: focus กลับปุ่ม clear / ยืนยัน: focus ไป todo-input (O-1)", () => {
   const app = loadApp();
   seed(app, ["A"]);
   app.api.onListChange({ target: liOf(app, todoIds(app)[0]).querySelector(".todo-checkbox") });
   app.doc.activeElement = el(app, "clear-completed-btn");
   app.api.clearCompleted();
   app.api.onDocumentKeydown({ key: "Escape", preventDefault() {} });
-  assert.strictEqual(app.doc.activeElement, el(app, "clear-completed-btn"), "ปิดด้วย Esc → focus กลับปุ่ม clear");
-  // ปิดด้วยปุ่มยืนยันก็ต้องคืน focus ก่อน render
+  assert.strictEqual(app.doc.activeElement, el(app, "clear-completed-btn"), "ปิดด้วย Esc → focus กลับปุ่ม clear (ยัง enabled)");
+  // ปิดด้วยปุ่มยืนยัน: หลังยืนยัน ปุ่ม clear กลายเป็น disabled (ไม่เหลือรายการเสร็จ)
+  // focus ที่คืนกลับจะหลุดไป body → แอปต้องย้าย focus ไป todo-input แทน (O-1)
   app.api.clearCompleted();
   app.api.confirmModalAction();
-  assert.strictEqual(app.doc.activeElement, el(app, "clear-completed-btn"), "ปิดด้วยยืนยัน → focus กลับปุ่ม clear");
+  assert.strictEqual(el(app, "clear-completed-btn").disabled, true, "หลังยืนยัน ปุ่ม clear ต้อง disabled");
+  assert.strictEqual(
+    app.doc.activeElement,
+    el(app, "todo-input"),
+    "ปิดด้วยยืนยัน → focus ต้องไปที่ todo-input ไม่หลุดไป body"
+  );
 });
 
 test("TC-006.10", "ไม่ใช้ window.confirm — grep ใน app.js ต้องไม่พบ", () => {
