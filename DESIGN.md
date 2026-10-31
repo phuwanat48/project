@@ -178,7 +178,7 @@ Responsive ที่ <768px เปลี่ยนแค่ 3 อย่าง: h1
 - **Secondary (ยกเลิก, ลบรายการที่เสร็จ):** พื้นกระดาษ ขอบเส้นดินสอ ตัวหนังสือหมึกชัด (#ffffff / #1f2933 / #d5dbe1)
 - **Danger confirm (ยืนยัน):** พื้นแดงประตูไม่กลับ ตัวหนังสือขาว หนา 600 (#b3261e / #ffffff)
 - **Danger ghost (ลบรายการเดียว):** พื้นกระดาษ ตัวหนังสือแดง (#b3261e)
-- **Hover / Focus:** hover เปลี่ยนพื้นเท่านั้น (primary→#114a99, secondary→#eef1f5, danger ghost→#fbeeed, danger confirm→#8f1e18) focus-visible ทุกอันเป็น 3px outline น้ำเงินพึ่งพาได้ offset 2px
+- **Hover / Focus:** hover เปลี่ยนพื้นเท่านั้น (primary→#114a99, secondary→#eef1f5, danger ghost→#fbeeed, danger confirm→#8f1e18) focus-visible เป็น outline น้ำเงินพึ่งพาได้ offset 2px — ปุ่มพื้นขาว/ghost ใช้ 3px ring เดี่ยว ส่วนปุ่มพื้นสี (primary/danger confirm) ใช้ double-ring: outline 2px น้ำเงิน + inset ขอบขาว 2px เพื่อไม่กลืนกับพื้นปุ่ม (non-text contrast ≥ 3:1 ตาม WCAG 2.1 AA)
 - **สถานะ disabled:** opacity 0.55 + cursor not-allowed
 
 ### Todo Item (Signature Component)
@@ -216,7 +216,7 @@ Responsive ที่ <768px เปลี่ยนแค่ 3 อย่าง: h1
 - **Do** ตั้ง touch target ขั้นต่ำ 44×44px ทุกคอนโทรล (ปุ่ม, checkbox, input)
 - **Do** แสดงข้อความผู้ใช้ผ่าน `textContent` เท่านั้น — กัน XSS ไม่ว่าข้อความจะดูอันตรายแค่ไหน
 - **Do** ตรวจคอนทราสต์ WCAG 2.1 AA ทุกคู่ข้อความ/พื้น (#57606a และ #155ab6 บน #ffffff ผ่าน 4.5:1 แล้ว) และคง aria-live/role dialog เดิมทุกตำแหน่ง
-- **Do** ให้ focus-visible ring 3px กับทุกอย่างที่โฟกัสได้
+- **Do** ให้ focus-visible ring กับทุกอย่างที่โฟกัสได้ — ปุ่มพื้นขาว/ghost ใช้ 3px ring เดี่ยว, ปุ่มพื้นสี (primary/danger confirm) ใช้ double-ring (outline น้ำเงิน + inset ขาว) ให้ contrast กับพื้นปุ่ม ≥ 3:1
 - **Do** ให้ทุกการกระทำมี feedback ทันทีบนหน้าจอ — งานเป็น client-only ทั้งหมด ไม่มีสถานะรอ
 - **Do** เขียนป้ายเป็นไทยผสมอังกฤษตามธรรมชาติของงานจริง (ไม่ใช่สองภาษาคู่ทุกป้าย)
 

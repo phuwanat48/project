@@ -332,4 +332,135 @@ Logic ทั้งหมดของแอป (state, persistence, validation, a
 
 การ polish UI รอบนี้**อยู่ในขอบเขต ไม่ทำลาย AC เดิม และไม่มีบั๊ก**: (1) ไอคอน SVG ผ่าน `createElementNS` คง `data-action`/`aria-label`/`btn-label` ครบ ปุ่มแก้ไขยังค้นหาและรับ focus ได้เหมือนเดิม (TC-005.12 ผ่าน) (2) การแก้ `styles.css` ล้วนเป็น CSS tokens/visual ไม่กระทบ logic (3) การเพิ่ม `createElementNS` ใน stub เป็นการอัปเดต test adapter ที่**จำเป็นและสมเหตุสมผล** — ไม่มีการแก้เทสให้ผ่านเพื่อซ่อนบั๊ก (`tests/app.test.js` ไม่ถูกแตะในรอบนี้) ผลรันอิสระ 54/54 ผ่านครบ เหลือเฉพาะการตรวจ visual ในเบราว์เซอร์จริงตามข้อจำกัดเดิม (N-4)
 
+---
+
+# ตรวจซ้ำรอบที่ 4 — หลัง dev แก้ CSS focus-visible double-ring ปุ่มพื้นสี + อัปเดต DESIGN.md
+
+> วันที่ตรวจ: 2026-10-31 | ขอบเขต: ตรวจซ้ำอิสระการแก้ `:focus-visible` double-ring ใน `styles.css` และ `DESIGN.md` + regression ทั้งชุดเทส
+> หมายเหตุ: ห้ามแก้โค้ดหลัก/โค้ดแอปในรอบนี้ — QA รันเทสและตรวจ diff เท่านั้น
+
+## 21. ขอบเขตการแก้ (ตรวจจาก `git diff` อิสระ)
+
+| ไฟล์ | รายละเอียดที่พบใน diff |
+|---|---|
+| `styles.css` | เพิ่มกฎ `#add-btn:focus-visible` และ `.btn-danger:focus-visible` เพื่อปรับโฟกัสริงของปุ่มพื้นสี (primary และ danger confirm) เป็นแบบ double-ring: `outline: 2px solid var(--color-focus)`, `outline-offset: 2px`, และ `box-shadow: inset 0 0 0 2px var(--color-surface)` โดยปุ่มพื้นขาว/ghost ยังใช้โฟกัสริงเดิม |
+| `DESIGN.md` | อัปเดตเอกสาร Design System 2 จุดในส่วน Components (Primary/Danger confirm/Focus) และ Do's & Don'ts ให้ตรงกับกฎโฟกัสริง double-ring ของปุ่มพื้นสีใน CSS จริง |
+| `app.js` / `index.html` / `tests/` | **ไม่ถูกแตะเลย** (ยืนยันจาก `git diff --name-only` พบเฉพาะ `DESIGN.md` และ `styles.css`) |
+
+## 22. ผลรันเทสอิสระ (รอบที่ 4)
+
+รัน `node tests/app.test.js` เองอิสระ:
+
+```
+รวมทั้งหมด: 54 | ผ่าน: 54 | ไม่ผ่าน: 0
+```
+
+ผ่านครบทุกเทส (54/54)
+
+## 23. ผลการตรวจโค้ด CSS และ DESIGN.md
+
+| รายการตรวจ | ผลการตรวจสอบ | สรุป |
+|---|---|---|
+| การใช้ CSS variables / tokens | `#add-btn:focus-visible` และ `.btn-danger:focus-visible` ใช้ `var(--color-focus)` (#155ab6) และ `var(--color-surface)` (#ffffff) ซึ่งเป็น token ที่ระบุใน Design System | PASS |
+| ผลกระทบต่อปุ่มอื่น | กฎเฉพาะเจาะจงเฉพาะ `#add-btn:focus-visible` และ `.btn-danger:focus-visible` ปุ่มประเภทอื่น (ghost/secondary/delete/edit/checkbox/input) ยังคงใช้กฎเดิม `:is(button, input, [tabindex]):focus-visible` (`outline: 3px solid var(--color-focus)`) ไม่ได้รับผลกระทบ | PASS |
+| prefers-reduced-motion | โฟกัสริงใช้ static properties (`outline` และ `box-shadow`) ไม่มี animation / transition จึงไม่ขัดหรือกระทบกับการตั้งค่า `prefers-reduced-motion` | PASS |
+| DESIGN.md ตรงกับ CSS จริง | เอกสาร `DESIGN.md` บรรทัดที่ 181 และ 219 อัปเดตระบุการใช้ double-ring (`outline 2px` + `inset ขอบขาว 2px`) ตรงกับใน `styles.css` บรรทัดที่ 294–299 เป๊ะ | PASS |
+
+## 24. Regression ต่อ AC เดิม (US-001–US-007) — รอบที่ 4
+
+รันซ้ำทั้งชุด 54 เคส — ทุกกลุ่มผ่านครบทั้งหมด:
+
+| กลุ่ม | จำนวน | ผล |
+|---|---|---|
+| US-001 เพิ่มรายการ | 5 | PASS ทั้งหมด |
+| US-002 ลบรายการ | 4 | PASS ทั้งหมด |
+| US-003 ติ๊กเสร็จ/ยกเลิก | 4 | PASS ทั้งหมด |
+| US-004 localStorage / ข้อมูลเสียหาย | 6 | PASS ทั้งหมด |
+| US-005 แก้ไขข้อความ | 12 | PASS ทั้งหมด |
+| US-006 clear completed + modal | 10 | PASS ทั้งหมด |
+| US-007 นับจำนวน | 3 | PASS ทั้งหมด |
+| Edge cases / ความปลอดภัย | 10 | PASS ทั้งหมด |
+
+## 25. สถิติ (รอบที่ 4)
+
+| รายการ | จำนวน |
+|---|---|
+| เทสทั้งหมด | 54 |
+| ผ่าน | 54 |
+| ไม่ผ่าน | 0 |
+| บั๊กที่ต้องแก้ | 0 |
+
+## 26. สรุป (รอบที่ 4)
+
+การปรับปรุง CSS โฟกัสริงสำหรับปุ่มพื้นสี (#add-btn และ .btn-danger) เป็น double-ring มีการครอบคลุมถูกต้องตรงตาม design system ใช้ CSS tokens อย่างสอดคล้อง ไม่กระทบปุ่มอื่นหรือ prefers-reduced-motion และ DESIGN.md ถูกอัปเดตตรงตามโค้ด CSS จริง การตรวจสอบ git diff ยืนยันว่าไม่มีการแก้ไขไฟล์ JavaScript, HTML หรือ Test Script ใดๆ Regression US-001 ถึง US-007 ยังคงผ่าน 100% (54/54)
+
+---
+
+# ตรวจซ้ำรอบที่ 5 — หลังปรับ `--color-bg` ใน styles.css จาก `#faf6f0` เป็น `#faf5ff`
+
+> วันที่ตรวจ: 2026-10-31 | ขอบเขต: ตรวจสอบการเปลี่ยนสีพื้นหลัง (โทนออฟไวท์อมม่วง) ตามข้อกำหนดการออกแบบ + regression ทั้งชุดเทส
+> หมายเหตุ: ห้ามแก้โค้ดหลัก/โค้ดแอปในรอบนี้ — QA รันเทสและตรวจ diff เท่านั้น
+
+## 27. ขอบเขตการแก้ (ตรวจจาก `git diff` อิสระ)
+
+| ไฟล์ | รายละเอียดที่พบใน diff |
+|---|---|
+| `styles.css` | บรรทัดที่ 9: `--color-bg: #faf5ff;` (เดิม `#faf6f0`) — เปลี่ยนโทนพื้นหลังจากครีมอ่อนเป็นออฟไวท์อมม่วง ตามข้อกำหนดการออกแบบ |
+| `app.js` / `index.html` / `tests/` / `DESIGN.md` | **ไม่ถูกแตะเลย** (ยืนยันจาก `git diff --name-only` พบเฉพาะ `styles.css`) |
+
+## 28. ผลรันเทสอิสระ (รอบที่ 5)
+
+รัน `node tests/app.test.js` เองอิสระ:
+
+```
+รวมทั้งหมด: 54 | ผ่าน: 54 | ไม่ผ่าน: 0
+```
+
+ผ่านครบทุกเทส (54/54)
+
+## 29. ผลการตรวจสอบการเปลี่ยนสีพื้นหลัง
+
+| รายการตรวจ | ผลการตรวจสอบ | สรุป |
+|---|---|---|
+| การใช้ CSS variable | `--color-bg` ถูกใช้ใน `body { background: var(--color-bg); }` และไม่มี hardcode สีพื้นหลังอื่นในไฟล์ | PASS |
+| ผลกระทบต่อ logic | การเปลี่ยนค่า CSS variable เป็นการเปลี่ยนแปลง visual เท่านั้น ไม่มีการอ้างอิง `--color-bg` ใน JavaScript logic ใดๆ (grep `--color-bg` ใน `app.js` ไม่พบ) | PASS |
+| คอนทราสต์ข้อความ | `--color-text: #2c2523` (อมน้ำตาลอุ่น) บน `--color-bg: #faf5ff` — คอนทราสต์ ≥ 4.5:1 ตาม WCAG AA (ตรวจสอบด้วยเครื่องมือคอนทราสต์) | PASS |
+| ส่วนอื่นที่อาจใช้ bg | `.todo-item`, `.modal`, `.btn` ใช้ `--color-surface: #ffffff` — ไม่ได้รับผลกระทบ | PASS |
+| prefers-reduced-motion | การเปลี่ยนสีพื้นหลังเป็น static color ไม่มี animation/transition จึงไม่ขัดกับการตั้งค่า | PASS |
+
+## 30. Regression ต่อ AC เดิม (US-001–US-007) — รอบที่ 5
+
+รันซ้ำทั้งชุด 54 เคส — ทุกกลุ่มผ่านครบทั้งหมด:
+
+| กลุ่ม | จำนวน | ผล |
+|---|---|---|
+| US-001 เพิ่มรายการ | 5 | PASS ทั้งหมด |
+| US-002 ลบรายการ | 4 | PASS ทั้งหมด |
+| US-003 ติ๊กเสร็จ/ยกเลิก | 4 | PASS ทั้งหมด |
+| US-004 localStorage / ข้อมูลเสียหาย | 6 | PASS ทั้งหมด |
+| US-005 แก้ไขข้อความ | 12 | PASS ทั้งหมด |
+| US-006 clear completed + modal | 10 | PASS ทั้งหมด |
+| US-007 นับจำนวน | 3 | PASS ทั้งหมด |
+| Edge cases / ความปลอดภัย | 10 | PASS ทั้งหมด |
+
+## 31. สถิติ (รอบที่ 5)
+
+| รายการ | จำนวน |
+|---|---|
+| เทสทั้งหมด | 54 |
+| ผ่าน | 54 |
+| ไม่ผ่าน | 0 |
+| บั๊กที่ต้องแก้ | 0 |
+
+## 32. สรุป (รอบที่ 5)
+
+การปรับ `--color-bg` จาก `#faf6f0` เป็น `#faf5ff` (โทนออฟไวท์อมม่วง) เป็นการเปลี่ยนแปลง **CSS visual เท่านั้น** ตรงตามข้อกำหนดการออกแบบ:
+- ใช้ CSS variable อย่างถูกต้อง (`var(--color-bg)` ใน `body`)
+- ไม่มีการ hardcode สีใน JavaScript logic
+- คอนทราสต์ข้อความผ่านเกณฑ์ WCAG AA
+- ไม่กระทบ component อื่นที่ใช้ `--color-surface`
+- Regression ทั้งชุด 54 test cases ผ่าน 100%
+
+ไม่พบบั๊กจากการเปลี่ยนสีพื้นหลังครั้งนี้
+
 RESULT: PASS

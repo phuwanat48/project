@@ -167,4 +167,43 @@
 - ข้อสังเกตเดิม 2.4 (CSP) และ 2.5 (input length) ยังคงเป็น Low/Info เช่นเดิม ไม่มีอะไรเปลี่ยน
 - ไม่พบช่องโหว่ระดับ Critical/High/Medium ทั้ง 3 รอบ
 
+---
+
+## 7. ตรวจซ้ำรอบที่ 4 (2026-10-31) — หลัง dev อัปเดต CSS double-ring focus และ DESIGN.md
+
+ขอบเขตรอบนี้: เฉพาะการเปลี่ยนแปลงใน `styles.css` (ส่วน `:focus-visible` double-ring สำหรับ `#add-btn` และ `.btn-danger`) และ `DESIGN.md` (ส่วนอัปเดตคำอธิบาย focus ring) พร้อมยืนยันข้อสรุปเดิม (หัวข้อ 1–6)
+
+### 7.1 กฎ `:focus-visible` double-ring ใน `styles.css`
+
+- **ไฟล์:บรรทัด:** `styles.css:294–299`
+- **ผลตรวจ:**
+  - กฎ CSS ที่เพิ่มเข้ามา:
+    ```css
+    #add-btn:focus-visible,
+    .btn-danger:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+      box-shadow: inset 0 0 0 2px var(--color-surface);
+    }
+    ```
+  - ค่า property ทั้งหมดใช้ CSS variables เดิมที่มีอยู่แล้ว (`--color-focus`, `--color-surface`) และค่าความหนาคงที่ (2px)
+  - **ไม่มีภายนอก/ทรัพยากรแปลกปลอม:** ไม่มีการใช้ `url()`, `@import`, หรือโหลด external resource ใด ๆ
+  - **ไม่มีการประเมินค่าแบบ dynamic/unsafe:** เป็น static CSS selector ล้วน ไม่ส่งผลกระทบต่อ DOM หรือสคริปต์
+  - **ไม่เปิดช่องโหว่ใหม่:** ไม่กระทบต่อความปลอดภัย ข้อมูล หรือความถูกต้องของ state แอป
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่
+
+### 7.2 คำอธิบายเรื่อง focus-visible ใน `DESIGN.md`
+
+- **ไฟล์:บรรทัด:** `DESIGN.md:181, 219`
+- **ผลตรวจ:**
+  - อัปเดตเอกสาร Design System ให้สอดคล้องกับการเปลี่ยนแปลงใน `styles.css`
+  - เป็นไฟล์ Markdown สำหรับเอกสารออกแบบ ไม่มี executable code หรือ script ใด ๆ
+- **สรุป:** ไม่แนะนำช่องโหว่ใหม่
+
+### 7.3 ยืนยันข้อสรุปเดิม
+
+- ไม่พบ `url()` หรือ external resource ใหม่ใน `styles.css` (มีเพียง data URI SVG เดิมที่ `styles.css:192`)
+- ไม่พบการใช้ `innerHTML`, `insertAdjacentHTML`, `eval`, หรือ dynamic execution ในส่วนใด ๆ ของแอป
+- ไม่พบช่องโหว่ระดับ Critical/High/Medium ทั้ง 4 รอบการตรวจ
+
 RESULT: PASS

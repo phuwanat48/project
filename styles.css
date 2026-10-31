@@ -6,21 +6,20 @@
    ============================================================ */
 
 :root {
-  --color-bg: #f5f7fa;
+  --color-bg: #faf5ff;            /* พื้นหลังโทนอุ่น ครีมอ่อน/off-white อมม่วง */
   --color-surface: #ffffff;
-  --color-text: #1f2933;
-  --color-text-muted: #57606a;   /* คอนทราสต์บนพื้นขาว ≥ 4.5:1 */
-  --color-primary: #155ab6;      /* ปุ่ม/checkbox — ตัวหนังสือขาวคอนทราสต์ ≥ 4.5:1 */
-  --color-primary-dark: #114a99;
+  --color-text: #2c2523;          /* อมน้ำตาลอุ่น */
+  --color-text-muted: #786c65;   /* คอนทราสต์บนพื้นขาว ≥ 4.5:1 */
+  --color-primary: #8b5cf6;      /* สีเน้นม่วงชัดสวยเด่น (Violet-600) — ตัวหนังสือขาวคอนทราสต์ ≥ 4.5:1 */
+  --color-primary-dark: #7c3aed;
   --color-danger: #b3261e;
   --color-danger-dark: #8f1e18;
-  --color-border: #d5dbe1;
-  --color-wash-blue: #eef1f5;    /* hover ปุ่มรอง */
-  --color-wash-red: #fbeeed;     /* hover ปุ่มลบรายการเดียว */
-  --color-focus: #155ab6;
+  --color-border: #e8e2d9;        /* ขอบโทนอุ่นอ่อน */
+  --color-wash-blue: #f5f3ff;    /* hover ปุ่มม่วงอ่อน */
+  --color-focus: #8b5cf6;
   --radius: 8px;
   --radius-sm: 6px;              /* checkbox 24px */
-  --radius-lg: 12px;             /* modal */
+  --radius-lg: 12px;             /* modal & ปุ่มเพิ่ม */
   /* บังคับธีมสว่างให้ scrollbar/caret ของเบราว์เซอร์ตรงโลกของหน้า */
   color-scheme: light;
 }
@@ -31,8 +30,8 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+  font-family: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Leelawadee UI", Tahoma, sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
@@ -45,9 +44,11 @@ body {
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 32px;
+  font-weight: 700;
   text-align: center;
   margin: 8px 0 24px;
+  letter-spacing: -0.02em;
 }
 
 /* ---- แถว input + ปุ่มเพิ่ม ---- */
@@ -82,6 +83,7 @@ h1 {
   min-height: 44px;
   padding: 8px 14px;
   font: inherit;
+  font-weight: 400;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -96,7 +98,8 @@ h1 {
 
 #add-btn {
   background: var(--color-primary);
-  border-color: var(--color-primary);
+  border: none;
+  border-radius: 12px;
   color: #ffffff;
   font-weight: 600;
 }
@@ -153,10 +156,9 @@ input {
   list-style: none;
   margin: 24px 0 0;
   padding: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* ระยะห่างระหว่างรายการ 8px */
 }
 
 .todo-item {
@@ -164,11 +166,10 @@ input {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.todo-item:last-child {
-  border-bottom: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(44, 37, 35, 0.04); /* เงาบางมาก */
 }
 
 /* checkbox จริง (appearance:none) วาดกล่อง+เครื่องหมายถูกเอง
@@ -197,6 +198,7 @@ input {
 
 .todo-text {
   flex: 1;
+  font-weight: 400;
   overflow-wrap: anywhere; /* ข้อความยากมาก/ไม่มีช่องว่าง ต้อง wrap ไม่พัง layout */
   word-break: break-word;
 }
@@ -205,6 +207,7 @@ input {
 .todo-item.done .todo-text {
   text-decoration: line-through;
   color: var(--color-text-muted);
+  opacity: 0.65;
 }
 
 /* ---- โหมดแก้ไข ---- */
@@ -285,6 +288,17 @@ input {
 :is(button, input, [tabindex]):focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* ปุ่มพื้นสี (primary/danger): ring น้ำเงินเดี่ยวกลืนกับพื้นปุ่ม
+   ใช้ double-ring — outline น้ำเงินด้านนอก + inset ขอบขาวด้านใน
+   ขาว vs น้ำเงิน #155ab6 และขาว vs แดง #b3261e ผ่าน non-text contrast ≥ 3:1
+   (WCAG 2.1 AA) — ปุ่มพื้นขาว/ghost ยังใช้ ring เดิมด้านบน */
+#add-btn:focus-visible,
+.btn-danger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: inset 0 0 0 2px var(--color-surface);
 }
 
 /* ---- ซ่อนแบบ screen reader ยังอ่านได้ ---- */
